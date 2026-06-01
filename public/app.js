@@ -314,7 +314,18 @@ function renderTable() {
         // Check permissions: users can edit/delete ONLY their own items. Admin can do everything.
         const canControl = (currentMode === 'admin') || (item.user === currentUser);
         
+        // Processing status badge (clickable only for Admin)
+        const statusVal = item.status || 'unprocessed';
+        const statusText = statusVal === 'processed' ? '처리' : '미처리';
+        const isAdmin = currentMode === 'admin';
+        
         tr.innerHTML = `
+            <td class="text-center">
+                <span class="status-box ${statusVal} ${isAdmin ? 'clickable' : ''}" 
+                      ${isAdmin ? `onclick="toggleProcessingStatus('${item.id}')"` : ''}>
+                    ${statusText}
+                </span>
+            </td>
             <td>${escapeHTML(item.date)}</td>
             <td>${escapeHTML(item.category)}</td>
             <td>${escapeHTML(item.team)}</td>
@@ -444,6 +455,7 @@ expenseForm.addEventListener('submit', async (e) => {
             user,
             card,
             amount,
+            status: 'unprocessed',
             createdAt: timestamp,
             updatedAt: timestamp
         };
@@ -474,6 +486,36 @@ expenseForm.addEventListener('submit', async (e) => {
     
     renderTable();
 });
+
+// Toggle processing status (Admin only)
+window.toggleProcessingStatus = async function(id) {
+    if (currentMode !== 'admin') return;
+    
+    const idx = expenses.findIndex(x => x.id === id);
+    if (idx === -1) return;
+    
+    const item = expenses[idx];
+    const newStatus = (item.status === 'processed') ? 'unprocessed' : 'processed';
+    
+    try {
+        const res = await fetch(`/api/expenses/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+        });
+        
+        if (res.ok) {
+            const result = await res.json();
+            expenses[idx] = result.payload;
+            renderTable();
+            showToast(`전표 상태가 '${newStatus === 'processed' ? '처리' : '미처리'}' 상태로 성공적으로 업데이트되었습니다.`);
+        } else {
+            showToast('서버 상태 변경 실패', 'error');
+        }
+    } catch (err) {
+        showToast('서버 통신 실패', 'error');
+    }
+};
 
 // Edit Mode Activation
 window.startEdit = function(id) {
@@ -716,9 +758,10 @@ excelExportBtn.addEventListener('click', () => {
         return;
     }
     
-    const headers = ['결제일', '활동 카테고리', '소속 조/팀', '활동 회기', '활동 목적', '결제당사자', '카드번호', '결제 비용 (원)'];
+    const headers = ['처리여부', '결제일', '활동 카테고리', '소속 조/팀', '활동 회기', '활동 목적', '결제당사자', '카드번호', '결제 비용 (원)'];
     
     const rows = activeData.map(item => [
+        item.status === 'processed' ? '처리' : '미처리',
         item.date,
         item.category,
         item.team,
