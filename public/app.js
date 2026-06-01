@@ -33,6 +33,39 @@ const expenseUserInput = document.getElementById('expense-user');
 const expenseCardInput = document.getElementById('expense-card');
 const expenseAmountInput = document.getElementById('expense-amount');
 
+// --- Dynamic Category-Team Dropdown Mapping ---
+const categoryTeams = {
+    '센터장 솔루션 그룹코칭': [
+        '수도권북부', '수도권동부', '수도권서부', '인천', '경기북부', '경기남부', '경부중부', 
+        '충청', '강원', '전남제주', '전북광주', '경북', '경남', '대구', '부산'
+    ],
+    '실장 Cross 커뮤니티': [
+        '수도권중부 1팀', '수도권중부 2팀', '수도권중부 3팀', '수도권중부 4팀', '수도권중부 5팀', 
+        '수도권중부 6팀', '수도권중부 7팀', '수도권중부 8팀', '수도권중부 9팀',
+        '서남부 1팀', '서남부 2팀', '서남부 3팀', '서남부 4팀', '서남부 5팀', 
+        '서남부 6팀', '서남부 7팀', '서남부 8팀', '서남부 9팀', '서남부 10팀',
+        '강원팀', '충청 1팀', '충청 2팀'
+    ],
+    '조직활성화 활동': [
+        '본부/실', '기타'
+    ]
+};
+
+function updateTeamDropdownOptions() {
+    const selectedCategory = expenseCategorySelect.value;
+    const teams = categoryTeams[selectedCategory] || ['본부/실', '기타'];
+    
+    expenseTeamSelect.innerHTML = '';
+    teams.forEach(team => {
+        const opt = document.createElement('option');
+        opt.value = team;
+        opt.textContent = team;
+        expenseTeamSelect.appendChild(opt);
+    });
+}
+
+expenseCategorySelect.addEventListener('change', updateTeamDropdownOptions);
+
 const submitBtn = document.getElementById('submit-btn');
 const submitText = document.getElementById('submit-text');
 const cancelEditBtn = document.getElementById('cancel-edit-btn');
@@ -383,7 +416,13 @@ expenseForm.addEventListener('submit', async (e) => {
                 
                 if (res.ok) {
                     const result = await res.json();
-                    expenses[idx] = result.payload;
+                    // Double submission / race-condition prevention
+                    const currentIdx = expenses.findIndex(x => x.id === activeEditId);
+                    if (currentIdx !== -1) {
+                        expenses[currentIdx] = result.payload;
+                    } else {
+                        expenses.push(result.payload);
+                    }
                     showToast('전표가 정상적으로 수정 반영되었습니다. (서버 누적 저장)');
                     resetForm();
                 } else {
@@ -419,7 +458,10 @@ expenseForm.addEventListener('submit', async (e) => {
             
             if (res.ok) {
                 const result = await res.json();
-                expenses.push(result.payload);
+                // Double submission / race-condition prevention
+                if (!expenses.some(x => x.id === result.payload.id)) {
+                    expenses.push(result.payload);
+                }
                 showToast('전표 등록 완료. 협업 중인 다른 팀원들과 실시간 동기화됩니다.');
                 resetForm();
             } else {
@@ -448,6 +490,10 @@ window.startEdit = function(id) {
     editIdInput.value = item.id;
     expenseDateInput.value = item.date;
     expenseCategorySelect.value = item.category;
+    
+    // Dynamic team dropdown update before value assignment
+    updateTeamDropdownOptions();
+    
     expenseTeamSelect.value = item.team;
     expenseSessionSelect.value = item.session;
     expenseDescInput.value = item.desc;
@@ -475,6 +521,9 @@ function resetForm() {
     
     // Adjust forms matching active mode constraints
     adjustFormForMode();
+    
+    // Populate team options for default category
+    updateTeamDropdownOptions();
     
     // Restore primary submit button styles
     submitText.textContent = '제출하기';
@@ -824,6 +873,9 @@ window.addEventListener('DOMContentLoaded', async () => {
         localStorage.setItem('lg_expense_username', currentUser);
     }
     currentUserNameEl.textContent = currentUser;
+    
+    // Initialize dynamic team dropdown options
+    updateTeamDropdownOptions();
     
     // Always default to User mode upon initial page loading for security
     switchMode('user');
