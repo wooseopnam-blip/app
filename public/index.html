@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="LG전자 Teams 전표 자동화 시스템 - 비용 취합 및 정산 시스템">
+    <title>비용 취합 및 정산 시스템 - LG전자 Teams 전표 자동화</title>
+    <!-- Google Fonts: Outfit & Noto Sans KR -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="light-mode">
+    <div class="app-container">
+        <!-- 1. Top Navigation Bar (Black Theme) -->
+        <header class="app-header">
+            <!-- Left: Collaboration Status -->
+            <div id="sync-status" class="sync-badge status-offline">
+                <span class="status-dot"></span>
+                <span class="status-label">실시간 협업 채널 비활성화됨</span>
+            </div>
+            
+            <!-- Middle: User vs Admin Tab Buttons -->
+            <div class="mode-tabs">
+                <button type="button" id="tab-user" class="tab-btn active">사용자용</button>
+                <button type="button" id="tab-admin" class="tab-btn">관리자용</button>
+            </div>
+            
+            <!-- Right: System Name -->
+            <div class="system-title">LG전자 Teams 전표 자동화 시스템</div>
+        </header>
+
+        <!-- 2. Sub-Header Bar (White Theme with Yellow Bottom Border) -->
+        <div class="sub-header">
+            <div class="sub-header-left">
+                <h1 class="sub-title">비용 취합 및 정산 시스템</h1>
+                <span class="version-badge">V1.0 SHARED</span>
+            </div>
+            <div class="sub-header-right">
+                <!-- User Mode display -->
+                <div id="user-mode-display" class="mode-info-display">
+                    사용자 모드: <span id="current-user-name" class="highlight-user">남우섭</span>님 
+                    <button type="button" id="change-name-btn" class="change-btn">[이름 변경]</button>
+                </div>
+                <!-- Admin Mode display -->
+                <div id="admin-mode-display" class="mode-info-display hidden">
+                    관리자 모드: <span class="highlight-admin">전체 내역 관리</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Main Workspace Layout -->
+        <main class="app-main">
+            <!-- Full-width Input Form Box -->
+            <section class="card form-card">
+                <div class="card-header">
+                    <span class="vertical-bar"></span>
+                    <h2>비용 입력 폼 (총무 담당자용)</h2>
+                </div>
+                <form id="expense-form" autocomplete="off" novalidate>
+                    <input type="hidden" id="edit-id" value="">
+                    
+                    <!-- 4-Column Responsive Grid -->
+                    <div class="form-grid">
+                        <!-- 1. 결제일 -->
+                        <div class="form-group">
+                            <label for="expense-date">결제일</label>
+                            <input type="date" id="expense-date" required>
+                        </div>
+                        
+                        <!-- 2. 활동 카테고리 -->
+                        <div class="form-group">
+                            <label for="expense-category">활동 카테고리</label>
+                            <select id="expense-category" required>
+                                <option value="실장 Cross 커뮤니티">실장 Cross 커뮤니티</option>
+                                <option value="조직문화 활성화">조직문화 활성화</option>
+                                <option value="부서 소통활동">부서 소통활동</option>
+                                <option value="기타">기타</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 3. 소속 조/팀 -->
+                        <div class="form-group">
+                            <label for="expense-team">소속 조/팀</label>
+                            <select id="expense-team" required>
+                                <option value="수도권중부 1팀">수도권중부 1팀</option>
+                                <option value="수도권중부 2팀">수도권중부 2팀</option>
+                                <option value="수도권중부 3팀">수도권중부 3팀</option>
+                                <option value="수도권동부 1팀">수도권동부 1팀</option>
+                                <option value="수도권동부 2팀">수도권동부 2팀</option>
+                                <option value="본부/실">본부/실</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 4. 활동 회기 -->
+                        <div class="form-group">
+                            <label for="expense-session">활동 회기</label>
+                            <select id="expense-session" required>
+                                <option value="1회기">1회기</option>
+                                <option value="2회기">2회기</option>
+                                <option value="3회기">3회기</option>
+                                <option value="4회기">4회기</option>
+                                <option value="5회기">5회기</option>
+                                <option value="기타">기타</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 5. 활동 목적 -->
+                        <div class="form-group">
+                            <label for="expense-desc">활동 목적</label>
+                            <input type="text" id="expense-desc" placeholder="예: 그룹코칭 식대" required>
+                        </div>
+                        
+                        <!-- 6. 결제당사자 이름 -->
+                        <div class="form-group">
+                            <label for="expense-user">결제당사자 이름</label>
+                            <input type="text" id="expense-user" placeholder="결제자 성명 대필 가능" required>
+                        </div>
+                        
+                        <!-- 7. 카드번호 -->
+                        <div class="form-group">
+                            <label for="expense-card">카드번호</label>
+                            <input type="text" id="expense-card" placeholder="1234-5768-..." required>
+                        </div>
+                        
+                        <!-- 8. 결제 비용 -->
+                        <div class="form-group">
+                            <label for="expense-amount">결제 비용 (원)</label>
+                            <div class="amount-wrapper">
+                                <input type="text" id="expense-amount" placeholder="0" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="form-actions">
+                        <button type="submit" id="submit-btn" class="btn btn-primary">
+                            <i class="fa-solid fa-plus"></i> <span id="submit-text">제출하기</span>
+                        </button>
+                        <button type="button" id="cancel-edit-btn" class="btn btn-secondary hidden">
+                            취소하기
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Full-width Expense List Box -->
+            <section class="card list-card">
+                <div class="list-header">
+                    <div class="card-header">
+                        <span class="vertical-bar"></span>
+                        <h2>제출된 내역 리스트</h2>
+                    </div>
+                    <div class="list-actions">
+                        <!-- Filters -->
+                        <select id="filter-extractor" class="extractor-select">
+                            <option value="all">전체 내역 추출</option>
+                            <option value="mine">내 내역만 추출</option>
+                        </select>
+                        
+                        <!-- Actions -->
+                        <button type="button" id="excel-export-btn" class="btn btn-success">
+                            <i class="fa-solid fa-download"></i> 엑셀 다운로드
+                        </button>
+                        
+                        <!-- Utility buttons hidden/shown for developer productivity -->
+                        <button type="button" id="sample-data-btn" class="btn btn-utility" title="샘플 데이터 로드">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> 샘플 추가
+                        </button>
+                        <button type="button" id="clear-all-btn" class="btn btn-danger-soft" title="모든 데이터 초기화">
+                            <i class="fa-solid fa-trash-can"></i> 전체삭제
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Database Grid Container -->
+                <div class="table-container">
+                    <div id="empty-state-container" class="empty-state">
+                        <p class="empty-text">제출된 정산 내역이 없습니다.</p>
+                    </div>
+                    <table class="expense-table hidden" id="expense-table-el">
+                        <thead>
+                            <tr>
+                                <th>결제일</th>
+                                <th>활동 카테고리</th>
+                                <th>소속 조/팀</th>
+                                <th>활동 회기</th>
+                                <th>활동 목적</th>
+                                <th>결제당사자</th>
+                                <th>카드번호</th>
+                                <th class="text-right">결제 비용 (원)</th>
+                                <th class="text-center" style="width: 100px;">작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expense-list-body">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- User Profile Change sleek Modal -->
+    <div id="name-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3>사용자 이름 변경</h3>
+            <p>이 시스템에 등록할 본인의 이름을 입력해 주세요.</p>
+            <div class="form-group" style="margin: 1rem 0;">
+                <input type="text" id="new-user-name" placeholder="이름을 입력하세요 (예: 남우섭)">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="name-cancel-btn" class="btn btn-secondary">취소</button>
+                <button type="button" id="name-save-btn" class="btn btn-primary">변경 적용</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Element -->
+    <div id="toast" class="toast hidden">
+        <i class="fa-solid fa-circle-check toast-icon"></i>
+        <span class="toast-message">메시지 내용</span>
+    </div>
+
+    <!-- Custom Logic Script -->
+    <script src="app.js"></script>
+</body>
+</html>
