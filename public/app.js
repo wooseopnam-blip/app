@@ -633,6 +633,23 @@ clearAllBtn.addEventListener('click', async () => {
 });
 
 // --- Native WebSocket Real-time Synchronization Engine ---
+let pollingInterval = null;
+
+function startPolling() {
+    if (pollingInterval) return;
+    pollingInterval = setInterval(async () => {
+        await fetchExpensesFromServer();
+    }, 5000); // Poll database every 5 seconds
+    updateMqttBadgeStatus('polling');
+}
+
+function stopPolling() {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+    }
+}
+
 function initWebSocketRealtimeSync() {
     const socketProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const socketUrl = `${socketProtocol}//${window.location.host}`;
@@ -643,6 +660,7 @@ function initWebSocketRealtimeSync() {
         socket = new WebSocket(socketUrl);
         
         socket.onopen = () => {
+            stopPolling();
             updateMqttBadgeStatus('online');
             console.log('Successfully connected to own backend WebSocket server.');
         };
@@ -657,19 +675,19 @@ function initWebSocketRealtimeSync() {
         };
         
         socket.onclose = () => {
-            updateMqttBadgeStatus('offline');
-            console.log('Disconnected from backend WebSocket server. Reconnecting in 5 seconds...');
-            setTimeout(initWebSocketRealtimeSync, 5000); // Auto reconnect loop
+            console.log('Disconnected from backend WebSocket server. Reconnecting in 15 seconds...');
+            startPolling();
+            setTimeout(initWebSocketRealtimeSync, 15000); // Retry connection less aggressively on serverless
         };
         
         socket.onerror = (err) => {
             console.error('WebSocket engine encountered error:', err);
-            updateMqttBadgeStatus('offline');
+            startPolling();
         };
         
     } catch (e) {
         console.error('WebSocket boot crash:', e);
-        updateMqttBadgeStatus('offline');
+        startPolling();
     }
 }
 
@@ -684,6 +702,9 @@ function updateMqttBadgeStatus(status) {
     } else if (status === 'connecting') {
         syncStatusBadge.classList.add('status-connecting');
         statusLabel.textContent = '협업 채널 연결 중';
+    } else if (status === 'polling') {
+        syncStatusBadge.classList.add('status-online');
+        statusLabel.textContent = '실시간 동기화 활성화됨 (자동 갱신)';
     } else {
         syncStatusBadge.classList.add('status-offline');
         statusLabel.textContent = '실시간 협업 채널 비활성화됨';

@@ -3,6 +3,12 @@
  * Core Express & WebSocket Server Backend with Hybrid Database Support (PostgreSQL / JSON file)
  */
 
+const dns = require('dns');
+// Force Node.js to prefer IPv4 over IPv6 to resolve Render's lack of outbound IPv6 routing
+if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder('ipv4first');
+}
+
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
@@ -361,6 +367,10 @@ wss.on('connection', (ws) => {
 });
 
 // --- Start the Server ---
-server.listen(PORT, () => {
-    console.log(`LG Expense System server is running on http://localhost:${PORT}`);
-});
+if (!process.env.VERCEL) {
+    server.listen(PORT, () => {
+        console.log(`LG Expense System server is running on http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;
