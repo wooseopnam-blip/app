@@ -1,3 +1,7 @@
+const dns = require('dns');
+if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder('ipv4first');
+}
 /**
  * LG Electronics Teams Expense Automation System
  * Core Express & WebSocket Server Backend with Hybrid Database Support (PostgreSQL / JSON file)
